@@ -1,9 +1,9 @@
 -- OpenInstaller v1.0.0 (based on wget) 
 
-local BASE_URL = "https://github.com/JustSxm/CC-PocketMP3"
+local BASE_URL = "https://raw.githubusercontent.com/JustSxm/CC-PocketMP3/master/"
 
 local files = {
-    ["./startup.lua"] = BASE_URL .. "pocket.lua",
+    ["./pocket.lua"] = BASE_URL .. "pocket.lua",
 }
 
 if not http then
