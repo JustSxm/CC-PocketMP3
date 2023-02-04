@@ -4,7 +4,7 @@ local BASE_URL = "https://raw.githubusercontent.com/JustSxm/CC-PocketMP3/master/
 
 local files = {
     ["./pocket.lua"] = BASE_URL .. "pocket.lua",
-    ["./installer.lua"] = BASE_URL .. "installer.lua",
+    ["./installer.lua"] = BASE_URL .. "installer.lua"
 }
 
 if not http then
