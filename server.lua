@@ -1,5 +1,10 @@
 
 monitor = peripheral.find("monitor")
+local ws, err = http.websocket("wss://ws.postman-echo.com/raw")
+if not ws then
+    return printError(err)
+end
+
 local wave = { }
 wave.version = "2.0.0"
 
@@ -145,7 +150,18 @@ function wave.createOutput(out, volume, filter, throttle, clipMode)
 		output.type = "custom"
 		return output
 	elseif type(out) == "string" then
-		if peripheral.getType(out) == "speaker" then
+        if out == "websocket" then
+            if wave._isNewSystem then
+                output.type = "websocket"
+				function output.nativePlayNote(note, pitch, volume)
+					if output.volume * volume > 0 then
+                        ws.send(wave._newSoundMap[note] .. "/" .. volume .. "/" .. pitch)
+					end
+				end
+				return output
+			end
+        end
+        elseif peripheral.getType(out) == "speaker" then
 			if wave._isNewSystem then
 				local nb = peripheral.wrap(out)
 				output.type = "speaker"
@@ -180,16 +196,14 @@ end
 
 function wave.scanOutputs()
 	local outs = { }
-	if commands then
-		outs[#outs + 1] = wave.createOutput(commands)
-	end
 	local sides = peripheral.getNames()
 	for i = 1, #sides do
 		if peripheral.getType(sides[i]) == "speaker" then
 			outs[#outs + 1] = wave.createOutput(sides[i])
 		end
+        
 	end
-	outs[#outs + 1] = wave.createOutput("top")
+    outs[#outs + 1] = wave.createOutput("websocket")
 	return outs
 end
 
@@ -1012,6 +1026,7 @@ local function run()
 end
 
 local function exit()
+    ws.close()
 	if noUI then return end
 	monitor.setBackgroundColor(colors.black)
 	monitor.setTextColor(colors.white)
