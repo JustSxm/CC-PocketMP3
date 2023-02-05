@@ -1,6 +1,6 @@
 
 monitor = peripheral.find("monitor")
-local ws, err = http.websocket("wss://ws.postman-echo.com/raw")
+ws, err = http.websocket("wss://socketsbay.com/wss/v2/1/demo/")
 if not ws then
     return printError(err)
 end
@@ -20,8 +20,9 @@ wave.output = { }
 wave.track = { }
 wave.instance = { }
 
-local function websocket(note, pitch, volume)
+function websocket(note, pitch, volume)
     ws.send(wave._newSoundMap[note] .. "/" .. volume .. "/" .. pitch)
+    print(wave._newSoundMap[note] .. "/" .. volume .. "/" .. pitch)
 end
 
 function wave.createContext(clock, volume)
@@ -154,7 +155,15 @@ function wave.createOutput(out, volume, filter, throttle, clipMode)
 		output.type = "custom"
 		return output
 	elseif type(out) == "string" then
-        if peripheral.getType(out) == "speaker" then
+        if out == "websocket" then
+            output.type = "websocket"
+            function output.nativePlayNote(note, pitch, volume)
+                if output.volume * volume > 0 then
+                    websocket(note, pitch, volume)
+                end
+            end
+            return output
+        elseif peripheral.getType(out) == "speaker" then
             if wave._isNewSystem then
                 local nb = peripheral.wrap(out)
                 output.type = "speaker"
@@ -197,7 +206,7 @@ function wave.scanOutputs()
 		end
         
 	end
-    outs[#outs + 1] = wave.createOutput(websocket())
+    outs[#outs + 1] = wave.createOutput("websocket")
 	return outs
 end
 
