@@ -1,5 +1,5 @@
 speaker = peripheral.find("speaker")
-local connectionURL = "wss://demo.piesocket.com/v3/channel_123?api_key=VCXCEuvhGcBDP7XhiJJUDvR1e1D3eiVjgZ9VRiaV&notify_self"
+local connectionURL = "ws://localhost:8080"
 local ws, err = http.websocket(connectionURL)
 if not ws then
   return printError(err)
@@ -8,16 +8,21 @@ end
 
 function split(str)
     local t = {}
-    for str in string.gmatch(str, "([^/]+)") do
+    local t2 = {}
+    for str in string.gmatch(str, "([^%s]+)") do
         table.insert(t, str)
     end
-    return t
+
+    for str in string.gmatch(t[2], "([^/]+)") do
+        table.insert(t2, str)
+    end
+    return t2
 end
 
 while true do
   local _, url, response, isBinary = os.pullEvent("websocket_message")
     if response then
         local vars = split(response)
-        speaker.playNote(vars[1], tonumber(vars[2]), tonumber(vars[3]))
+        speaker.playNote(vars[1], tonumber(vars[2]), tonumber(vars[3]:sub(1, -2)))
     end
 end

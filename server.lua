@@ -1,10 +1,9 @@
 
 monitor = peripheral.find("monitor")
-ws, err = http.websocket("wss://socketsbay.com/wss/v2/1/demo/")
+ws, err = http.websocket("ws://localhost:8080")
 if not ws then
     return printError(err)
 end
-
 local wave = { }
 wave.version = "2.0.0"
 
@@ -20,9 +19,8 @@ wave.output = { }
 wave.track = { }
 wave.instance = { }
 
-function websocket(note, pitch, volume)
-    ws.send(wave._newSoundMap[note] .. "/" .. volume .. "/" .. pitch)
-    print(wave._newSoundMap[note] .. "/" .. volume .. "/" .. pitch)
+function websocket(note, volume, pitch)
+    ws.send(note .. "/" .. volume .. "/" .. pitch)
 end
 
 function wave.createContext(clock, volume)
@@ -155,46 +153,49 @@ function wave.createOutput(out, volume, filter, throttle, clipMode)
 		output.type = "custom"
 		return output
 	elseif type(out) == "string" then
-        if out == "websocket" then
-            output.type = "websocket"
-            function output.nativePlayNote(note, pitch, volume)
-                if output.volume * volume > 0 then
-                    websocket(note, pitch, volume)
-                end
-            end
-            return output
-        elseif peripheral.getType(out) == "speaker" then
-            if wave._isNewSystem then
-                local nb = peripheral.wrap(out)
-                output.type = "speaker"
-                function output.nativePlayNote(note, pitch, volume)
-                    if output.volume * volume > 0 then
-                        --nb.playSound("minecraft:block.note_block."..wave._newSoundMap[note], volume, math.pow(2, (pitch - 12) / 12))
-                        nb.playNote(wave._newSoundMap[note], volume, pitch)
-                    end
-                end
-                return output
-            end
-        elseif type(out) == "table" then
-            if out.execAsync then
-                output.type = "commands"
-                if wave._isNewSystem then
-                    function output.nativePlayNote(note, pitch, volume)
-                        out.execAsync("playsound minecraft:block.note_block."..wave._newSoundMap[note].." record @a ~ ~ ~ "..tostring(volume).." "..tostring(math.pow(2, (pitch - 12) / 12)))
-                    end
-                else
-                    function output.nativePlayNote(note, pitch, volume)
-                        out.execAsync("playsound note_block."..wave._oldSoundMap[note].." @a ~ ~ ~ "..tostring(volume).." "..tostring(math.pow(2, (pitch - 12) / 12)))
-                    end
-                end
-                return output
-            elseif getmetatable(out) then
-                if getmetatable(out).__index == wave.output then
-                    return out
-                end
-            end
-        end
-    end
+		if peripheral.getType(out) == "speaker" then
+			if wave._isNewSystem then
+				local nb = peripheral.wrap(out)
+				output.type = "speaker"
+				function output.nativePlayNote(note, pitch, volume)
+					if output.volume * volume > 0 then
+						--nb.playSound("minecraft:block.note_block."..wave._newSoundMap[note], volume, math.pow(2, (pitch - 12) / 12))
+						nb.playNote(wave._newSoundMap[note], volume, pitch)
+					end
+				end
+				return output
+			end
+		elseif out == "websocket" then
+			if wave._isNewSystem then
+				output.type = "websocket"
+				function output.nativePlayNote(note, pitch, volume)
+					if output.volume * volume > 0 then
+						--nb.playSound("minecraft:block.note_block."..wave._newSoundMap[note], volume, math.pow(2, (pitch - 12) / 12))
+                        websocket(wave._newSoundMap[note], volume, pitch)
+					end
+				end
+				return output
+			end
+		end
+	elseif type(out) == "table" then
+		if out.execAsync then
+			output.type = "commands"
+			if wave._isNewSystem then
+				function output.nativePlayNote(note, pitch, volume)
+					out.execAsync("playsound minecraft:block.note_block."..wave._newSoundMap[note].." record @a ~ ~ ~ "..tostring(volume).." "..tostring(math.pow(2, (pitch - 12) / 12)))
+				end
+			else
+				function output.nativePlayNote(note, pitch, volume)
+					out.execAsync("playsound note_block."..wave._oldSoundMap[note].." @a ~ ~ ~ "..tostring(volume).." "..tostring(math.pow(2, (pitch - 12) / 12)))
+				end
+			end
+			return output
+		elseif getmetatable(out) then
+			if getmetatable(out).__index == wave.output then
+				return out
+			end
+		end
+	end
 end
 
 function wave.scanOutputs()
@@ -1029,16 +1030,13 @@ local function run()
 end
 
 local function exit()
-    ws.close()
+	ws.close()
 	if noUI then return end
 	monitor.setBackgroundColor(colors.black)
 	monitor.setTextColor(colors.white)
 	monitor.setCursorPos(1, 1)
 	monitor.clear()
 end
-
-
-
 
 init({...})
 run()
