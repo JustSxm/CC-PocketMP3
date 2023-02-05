@@ -154,7 +154,6 @@ function wave.createOutput(out, volume, filter, throttle, clipMode)
 		output.type = "custom"
 		return output
 	elseif type(out) == "string" then
-
         if peripheral.getType(out) == "speaker" then
             if wave._isNewSystem then
                 local nb = peripheral.wrap(out)
@@ -186,6 +185,7 @@ function wave.createOutput(out, volume, filter, throttle, clipMode)
                 end
             end
         end
+    end
 end
 
 function wave.scanOutputs()
